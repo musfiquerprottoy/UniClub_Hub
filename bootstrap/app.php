@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\CheckAdmin::class,
             'executive' => \App\Http\Middleware\CheckExecutive::class,
-            'advisor' => \App\Http\Middleware\CheckAdvisor::class, // <-- Add this line!
+            'advisor' => \App\Http\Middleware\CheckAdvisor::class, 
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
