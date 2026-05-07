@@ -1,0 +1,6 @@
+[90m= [39m<<<[32mEOS[39m
+  [32muse App[39m\\[32mModels[39m\\[32mUser;[39m
+  [32mUser::create(['name'=>'Advisor', 'email'=>'advisor2@example.com', 'password'=>'advisorpass2', 'role'=>'advisor']);[39m
+  [32mecho[39m
+  [32mUser::where('email', 'advisor2@example.com')->count();[39m
+  [32mEOS[39m

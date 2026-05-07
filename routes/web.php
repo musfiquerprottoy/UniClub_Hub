@@ -13,7 +13,7 @@ Route::patch('/events/{event}/finalize', [EventController::class, 'finalize'])->
 Route::resource('clubs', ClubController::class)->middleware(['auth', 'admin']);
 Route::resource('events', \App\Http\Controllers\EventController::class)->middleware(['auth', 'executive']);
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth.login');
 });
 
 Route::get('/dashboard', function () {
