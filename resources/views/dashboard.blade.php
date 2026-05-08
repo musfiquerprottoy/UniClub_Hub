@@ -1,261 +1,243 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
-
     <div class="py-12 bg-gray-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+            
+            {{-- 1. HEADER SECTION --}}
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-4xl font-black text-gray-900 tracking-tight">
+                        Welcome back, <span class="text-indigo-600">{{ Auth::user()->name }}</span>!
+                    </h2>
+                    <p class="text-gray-500 font-medium mt-1">University Club Portal Dashboard</p>
+                </div>
+                <div class="px-4 py-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <span class="text-xs font-black uppercase tracking-widest text-gray-400">Role:</span>
+                    <span class="text-sm font-bold text-indigo-600 ml-1 capitalize">{{ Auth::user()->role }}</span>
+                </div>
+            </div>
 
-            {{-- 1. SUCCESS ALERT BLOCK --}}
-            @if(session('success'))
-                <div class="mb-6">
-                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-[2rem] flex items-center justify-between shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xl">✅</span>
-                            <p class="font-bold text-sm">{{ session('success') }}</p>
-                        </div>
-                        <button onclick="this.parentElement.parentElement.remove()" class="text-emerald-400 hover:text-emerald-600 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
+            {{-- Flash Messages --}}
+            @if (session('success'))
+                <div class="bg-green-100 border border-green-200 text-green-700 px-6 py-4 rounded-[2rem] font-bold shadow-sm">
+                    {{ session('success') }}
                 </div>
             @endif
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-3xl p-8 text-gray-900">
-
-                {{-- Welcome Header --}}
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-gray-100 pb-8">
-                    <div>
-                        <h3 class="text-3xl font-black text-gray-900 tracking-tight">
-                            Welcome, {{ Auth::user()->name }}!
-                        </h3>
-                        <p class="text-gray-500 font-medium">Here's what's happening in UniClub Hub today.</p>
-                    </div>
-                    
-                    <div class="inline-flex items-center px-4 py-2 rounded-2xl font-bold text-sm 
-                        @if(Auth::user()->role === 'admin') bg-blue-100 text-blue-700 
-                        @elseif(Auth::user()->role === 'executive') bg-purple-100 text-purple-700
-                        @elseif(Auth::user()->role === 'advisor') bg-yellow-100 text-yellow-700
-                        @else bg-green-100 text-green-700 @endif">
-                        <span class="mr-2">
-                            @if(Auth::user()->role === 'admin') 🛡️ Admin
-                            @elseif(Auth::user()->role === 'executive') 🏢 Executive
-                            @elseif(Auth::user()->role === 'advisor') 📋 Advisor
-                            @else 🎓 Student @endif
-                        </span>
-                    </div>
+            @if (session('error'))
+                <div class="bg-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-[2rem] font-bold shadow-sm">
+                    {{ session('error') }}
                 </div>
+            @endif
 
-                {{-- 1. ADMIN SECTION --}}
-                @if(Auth::user()->role === 'admin')
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                        <div class="bg-blue-600 rounded-[2rem] p-8 text-white shadow-lg shadow-blue-200">
-                            <h4 class="text-xl font-bold mb-2">System Management</h4>
-                            <p class="text-blue-100 mb-6 text-sm">Full administrative oversight active.</p>
-                            <a href="{{ route('clubs.create') }}" class="inline-flex bg-white text-blue-600 px-6 py-3 rounded-xl font-black hover:bg-blue-50 transition">
-                                + Create New Club
-                            </a>
-                        </div>
-                        <div class="bg-gray-900 rounded-[2rem] p-8 text-white shadow-lg">
-                            <h4 class="text-xl font-bold mb-2">Platform Overview</h4>
-                            <div class="grid grid-cols-2 gap-4 mt-4">
-                                <div><p class="text-gray-400 text-xs uppercase font-bold">Total Clubs</p><p class="text-2xl font-black">{{ \App\Models\Club::count() }}</p></div>
-                                <div><p class="text-gray-400 text-xs uppercase font-bold">Total Users</p><p class="text-2xl font-black">{{ \App\Models\User::count() }}</p></div>
-                            </div>
-                        </div>
+            {{-- 2. ADVISOR SECTION: Review Proposals --}}
+            @if(Auth::user()->role === 'advisor')
+                <section class="space-y-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-orange-500 rounded-xl text-white">🔥</div>
+                        <h3 class="text-2xl font-black text-gray-900 uppercase italic">Pending Advisor Review</h3>
                     </div>
 
-                    <section class="mb-12">
-                        <h4 class="text-xl font-black mb-6 flex items-center gap-2 text-blue-700">
-                            <span>🚨</span> Events Awaiting Final Approval
-                        </h4>
-                        @php $pendingAdminEvents = \App\Models\Event::where('status', 'pending_admin')->latest()->get(); @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($pendingAdminEvents as $event)
-                                <div class="bg-white border-2 border-blue-100 rounded-[2rem] p-6 shadow-sm">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h5 class="font-black text-lg">{{ $event->title }}</h5>
-                                        <x-event-status :event="$event" />
-                                    </div>
-                                    <p class="text-sm text-gray-500 mb-6">Submitted by: <strong>{{ $event->club->name }}</strong></p>
-                                    <form action="{{ route('events.approve', $event->id) }}" method="POST">
-                                        @csrf @method('PATCH')
-                                        <button class="w-full py-3 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition">Approve & Make Live</button>
-                                    </form>
-                                </div>
-                            @empty
-                                <p class="text-gray-400 italic font-medium">No events pending admin approval.</p>
-                            @endforelse
-                        </div>
-                    </section>
+                    @php
+                        $advisorEvents = \App\Models\Event::where('status', 'pending_advisor')->with('club')->get();
+                    @endphp
 
-                {{-- 2. ADVISOR SECTION --}}
-                @elseif(Auth::user()->role === 'advisor')
-                    {{-- NEW BLOCK: CLUB MANAGEMENT REQUESTS --}}
-                    <section class="mb-12">
-                        <h4 class="text-xl font-black mb-6 flex items-center gap-2 text-indigo-700">
-                            <span>🏛️</span> Club Management Applications
-                        </h4>
-                        @php 
-                            $myTasks = \App\Models\ClubApplication::where('advisor_id', Auth::id())
-                                ->where('status', 'pending')
-                                ->with(['club', 'executive'])
-                                ->latest()
-                                ->get(); 
-                        @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($myTasks as $app)
-                                <div class="bg-white border-2 border-indigo-50 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h5 class="font-black text-xl text-gray-900">{{ $app->club->name }}</h5>
-                                            <p class="text-sm text-gray-500">Proposed Manager: <strong>{{ $app->executive->name }}</strong></p>
-                                        </div>
-                                        <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-black uppercase">Pending Approval</span>
-                                    </div>
-                                    <div class="flex gap-3 mt-6">
-                                        <form action="{{ route('applications.approve', $app->id) }}" method="POST" class="flex-1">
-                                            @csrf @method('PATCH')
-                                            <button class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition">Approve</button>
-                                        </form>
-                                        <form action="{{ route('applications.reject', $app->id) }}" method="POST" class="flex-1">
-                                            @csrf @method('PATCH')
-                                            <button class="w-full py-3 bg-red-50 text-red-600 rounded-xl font-black text-sm hover:bg-red-100 transition">Reject</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="col-span-full py-8 text-center bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
-                                    <p class="text-gray-400 font-medium">No pending club management requests assigned to you.</p>
-                                </div>
-                            @endforelse
-                        </div>
-                    </section>
-
-                    <section class="mb-12">
-                        <h4 class="text-xl font-black mb-6 flex items-center gap-2 text-yellow-700">
-                            <span>📋</span> Events to Review
-                        </h4>
-                        @php $pendingAdvisorEvents = \App\Models\Event::where('status', 'pending_advisor')->latest()->get(); @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($pendingAdvisorEvents as $event)
-                                <div class="bg-white border-2 border-yellow-100 rounded-[2rem] p-6 shadow-sm">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <h5 class="font-black text-lg">{{ $event->title }}</h5>
-                                        <x-event-status :event="$event" />
-                                    </div>
-                                    <p class="text-sm text-gray-500 mb-6 font-medium">Club: {{ $event->club->name }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @forelse($advisorEvents as $event)
+                            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-orange-100 shadow-sm">
+                                <h4 class="font-black text-gray-900">{{ $event->title }}</h4>
+                                <p class="text-xs text-indigo-600 font-bold mb-4 uppercase tracking-widest">{{ $event->club->name }}</p>
+                                <div class="flex flex-col gap-2">
                                     <form action="{{ route('events.forward', $event->id) }}" method="POST">
                                         @csrf @method('PATCH')
-                                        <button class="w-full py-3 bg-yellow-500 text-white rounded-xl font-black hover:bg-yellow-600 transition">Forward to Admin</button>
+                                        <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">Forward to Admin →</button>
+                                    </form>
+                                    <form action="{{ route('events.reject', $event->id) }}" method="POST">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="w-full py-3 bg-white text-red-600 border border-red-100 rounded-xl font-black text-[10px] uppercase tracking-widest">Reject</button>
                                     </form>
                                 </div>
-                            @empty
-                                <p class="text-gray-400 italic font-medium">Event queue is empty. Well done!</p>
-                            @endforelse
-                        </div>
-                    </section>
+                            </div>
+                        @empty
+                            <p class="text-gray-400 font-bold italic">No events waiting for advisor review.</p>
+                        @endforelse
+                    </div>
+                </section>
+            @endif
 
-                {{-- 3. EXECUTIVE SECTION --}}
-                @elseif(Auth::user()->role === 'executive')
-                    <section class="mb-12">
-                        <h4 class="text-xl font-bold text-gray-800 mb-6">🏢 Clubs You Manage</h4>
-                        @php $myClubs = \App\Models\Club::where('user_id', Auth::id())->get(); @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            @forelse($myClubs as $club)
-                                <div class="bg-white p-6 border rounded-[2rem] shadow-sm">
-                                    <div class="w-16 h-16 bg-indigo-50 rounded-2xl mb-4 flex items-center justify-center text-2xl overflow-hidden">
-                                        @if($club->logo)
-                                            <img src="{{ asset('storage/' . $club->logo) }}" class="w-full h-full object-cover">
-                                        @else
-                                            🏛️
-                                        @endif
-                                    </div>
-                                    <h5 class="font-black text-lg truncate">{{ $club->name }}</h5>
-                                    <div class="mt-4 flex flex-col gap-2">
-                                        <a href="{{ route('clubs.manage-members', $club->id) }}" class="text-center py-2 bg-gray-100 rounded-xl font-bold text-sm hover:bg-gray-200 transition">Members</a>
-                                        <a href="{{ route('events.create', ['club_id' => $club->id]) }}" class="text-center py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition">+ New Event</a>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-gray-400 italic">You aren't managing any clubs yet.</p>
-                            @endforelse
+            {{-- 3. ADMIN SECTION: Final Decision (Edit, Approve, Reject) --}}
+            @if(Auth::user()->role === 'admin')
+                <section class="space-y-8">
+                    <div class="bg-gray-900 rounded-[3rem] p-10 text-white flex justify-between items-center">
+                        <div>
+                            <h3 class="text-3xl font-black italic uppercase tracking-tighter">Admin Control Panel</h3>
+                            <p class="text-gray-400 mt-2 font-bold uppercase text-xs tracking-widest">System Management & Final Approvals</p>
                         </div>
-                    </section>
+                        <a href="{{ route('clubs.create') }}" class="px-8 py-4 bg-indigo-600 rounded-2xl font-black hover:bg-indigo-500 transition uppercase text-xs">Create New Club</a>
+                    </div>
 
-                    <section class="mb-12">
-                        <h4 class="text-xl font-black mb-6 flex items-center gap-2 text-purple-700">
-                            <span>⏳</span> My Pending Proposals
-                        </h4>
-                        @php $myPending = \App\Models\Event::where('created_by', Auth::id())->where('status', '!=', 'approved')->latest()->get(); @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @forelse($myPending as $event)
-                                <div class="bg-white border border-gray-100 p-5 rounded-3xl shadow-sm flex justify-between items-center">
-                                    <div>
-                                        <p class="text-xs font-black text-indigo-500 uppercase tracking-tighter">{{ $event->club->name }}</p>
-                                        <h5 class="font-bold text-gray-900">{{ $event->title }}</h5>
-                                    </div>
-                                    <x-event-status :event="$event" />
-                                </div>
-                            @empty
-                                <div class="col-span-full py-8 text-center bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
-                                    <p class="text-gray-400 font-medium">No active proposals at the moment.</p>
-                                </div>
-                            @endforelse
-                        </div>
-                    </section>
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-emerald-500 rounded-xl text-white">✅</div>
+                        <h3 class="text-2xl font-black text-gray-900 uppercase italic">Final Event Approvals</h3>
+                    </div>
 
-                {{-- 4. STUDENT SECTION --}}
-                @else
-                    <section class="mb-12">
-                        <h4 class="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                            <span>🏠</span> Events from Your Clubs
-                        </h4>
-                        @php 
-                            $joinedIds = Auth::user()->memberships()->where('status', 'accepted')->pluck('club_id');
-                            $myClubEvents = \App\Models\Event::whereIn('club_id', $joinedIds)->where('status', 'approved')->latest()->get();
-                        @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($myClubEvents as $event)
-                                <div class="bg-white border-2 border-indigo-50 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition">
-                                    <span class="text-[10px] font-black uppercase tracking-widest text-indigo-500">{{ $event->club->name }}</span>
-                                    <h5 class="text-xl font-black mt-1 text-gray-900">{{ $event->title }}</h5>
-                                    <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $event->description }}</p>
-                                    <div class="mt-4 pt-4 border-t border-gray-50 text-xs font-bold text-gray-400 flex gap-4">
-                                        <span>📅 {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}</span>
-                                        <span>📍 {{ $event->location }}</span>
+                    @php
+                        $adminEvents = \App\Models\Event::where('status', 'pending_admin')->with('club')->get();
+                    @endphp
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @forelse($adminEvents as $event)
+                            <div class="bg-white p-6 rounded-[2.5rem] border-2 border-emerald-100 shadow-sm flex flex-col">
+                                <div class="mb-6">
+                                    <h4 class="font-black text-gray-900 text-lg leading-tight">{{ $event->title }}</h4>
+                                    <span class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{{ $event->club->name }}</span>
+                                </div>
+                                
+                                <div class="space-y-2 mt-auto">
+                                    {{-- 1. APPROVE --}}
+                                    <form action="{{ route('events.approve', $event->id) }}" method="POST">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] tracking-widest hover:bg-emerald-700 transition uppercase">
+                                            APPROVE & GO LIVE
+                                        </button>
+                                    </form>
+
+                                    <div class="flex gap-2">
+                                        {{-- 2. EDIT --}}
+                                        <a href="{{ route('events.edit', $event->id) }}" class="flex-1 py-3 bg-gray-100 text-gray-700 text-center rounded-xl font-black text-[10px] tracking-widest hover:bg-gray-200 transition uppercase">
+                                            EDIT
+                                        </a>
+
+                                        {{-- 3. REJECT --}}
+                                        <form action="{{ route('events.reject', $event->id) }}" method="POST" class="flex-1">
+                                            @csrf @method('PATCH')
+                                            <button type="submit" class="w-full py-3 bg-white text-red-500 border border-red-100 rounded-xl font-black text-[10px] tracking-widest hover:bg-red-50 transition uppercase">
+                                                REJECT
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
-                            @empty
-                                <p class="text-gray-400 italic">No upcoming events from your clubs. Try exploring!</p>
-                            @endforelse
-                        </div>
-                    </section>
+                            </div>
+                        @empty
+                            <div class="col-span-full py-12 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-200">
+                                <p class="text-gray-400 font-bold italic">No events currently awaiting admin approval.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </section>
+            @endif
 
-                    <section>
-                        <h4 class="text-2xl font-black text-gray-900/30 mb-6">🌍 Explore Other Events</h4>
-                        @php 
-                            $otherEvents = \App\Models\Event::whereNotIn('club_id', $joinedIds)->where('status', 'approved')->latest()->get();
-                        @endphp
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @forelse($otherEvents as $event)
-                                <div class="bg-gray-50 p-6 rounded-[2rem] border border-transparent opacity-75 hover:opacity-100 transition-all hover:bg-white hover:border-gray-100">
-                                    <span class="text-[10px] font-black uppercase text-gray-400">{{ $event->club->name }}</span>
-                                    <h5 class="text-xl font-black text-gray-800">{{ $event->title }}</h5>
-                                    <a href="{{ route('clubs.show', $event->club_id) }}" class="inline-block mt-4 text-sm font-black text-indigo-600 hover:text-indigo-800 transition">View Club details →</a>
+            {{-- 4. EXECUTIVE SECTION: Managed Clubs --}}
+            @if(Auth::user()->role === 'executive')
+                <section class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-purple-600 rounded-xl text-white">✨</div>
+                            <h3 class="text-2xl font-black text-gray-900 uppercase italic">Clubs You Manage</h3>
+                        </div>
+                        <a href="{{ route('events.create') }}" class="px-6 py-3 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest">
+                            + Propose New Event
+                        </a>
+                    </div>
+                    
+                    @php
+                        $myClubs = \App\Models\Club::where('user_id', Auth::id())->get();
+                    @endphp
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @foreach($myClubs as $club)
+                            <div class="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-xl font-black text-gray-900">{{ $club->name }}</h4>
+                                    <p class="text-gray-400 text-xs font-bold uppercase mt-1">Executive Access</p>
                                 </div>
-                            @empty
-                                <p class="text-gray-400 italic">No other public events discovered yet.</p>
-                            @endforelse
-                        </div>
-                    </section>
-                @endif
+                                <a href="{{ route('clubs.manage-members', $club->id) }}" class="px-5 py-3 bg-purple-50 text-purple-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-100">Manage</a>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+            @endif
 
-            </div>
+            <hr class="border-gray-200 my-12">
+
+            {{-- 5. GLOBAL UPCOMING EVENTS (Visible to EVERYONE) --}}
+            <section class="space-y-8">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-rose-500 rounded-xl text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-900 uppercase italic tracking-tight">Upcoming Events</h3>
+                    </div>
+                    <a href="{{ route('events.index') }}" class="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] hover:underline">See All Activity →</a>
+                </div>
+
+                @php
+                    $globalEvents = \App\Models\Event::where('status', 'approved')
+                        ->with(['club', 'venue'])
+                        ->orderBy('event_date', 'asc')
+                        ->take(6)
+                        ->get();
+                @endphp
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @forelse($globalEvents as $event)
+                        <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-xl transition-all duration-300">
+                            {{-- Event Image --}}
+                            <div class="h-44 bg-gray-50 relative">
+                                @if($event->image)
+                                    <img src="{{ asset('storage/' . $event->image) }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="{{ $event->title }}">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-4xl bg-indigo-50 text-indigo-200 italic font-black uppercase">
+                                        {{ substr($event->title, 0, 1) }}
+                                    </div>
+                                @endif
+                                <div class="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur rounded-full shadow-sm text-[9px] font-black text-indigo-600 uppercase tracking-widest">
+                                    {{ $event->club->name }}
+                                </div>
+                            </div>
+
+                            {{-- Event Details --}}
+                            <div class="p-6 flex-1 flex flex-col">
+                                <h4 class="text-lg font-black text-gray-900 group-hover:text-indigo-600 transition">{{ $event->title }}</h4>
+                                
+                                <div class="mt-4 space-y-2">
+                                    <div class="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <span class="mr-2 text-indigo-500">📅</span> {{ \Carbon\Carbon::parse($event->event_date)->format('M d, Y') }}
+                                    </div>
+                                    
+                                    @if($event->start_time)
+                                    <div class="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <span class="mr-2 text-indigo-500">⏰</span> {{ \Carbon\Carbon::parse($event->start_time)->format('h:i A') }}
+                                    </div>
+                                    @endif
+
+                                    <div class="flex items-center text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <span class="mr-2 text-indigo-500">📍</span> {{ $event->venue ? $event->venue->name : $event->location }}
+                                    </div>
+                                </div>
+
+                                <p class="mt-4 text-xs text-gray-400 font-medium italic line-clamp-2">
+                                    "{{ $event->description }}"
+                                </p>
+
+                                <div class="mt-auto pt-6">
+                                    <button class="w-full py-3 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition shadow-lg">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-span-full py-20 bg-white rounded-[4rem] border-2 border-dashed border-gray-100 text-center">
+                            <div class="text-4xl mb-3 text-gray-200">🎈</div>
+                            <p class="text-gray-400 font-bold uppercase text-xs tracking-widest">Check back later for new events!</p>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+
         </div>
     </div>
 </x-app-layout>

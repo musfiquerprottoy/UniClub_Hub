@@ -7,6 +7,14 @@
 
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 relative z-10">
 
+            {{-- Alert Notification --}}
+            @if (session('success'))
+                <div class="mb-6 p-4 bg-green-100 border border-green-200 text-green-700 rounded-2xl font-bold shadow-sm flex items-center gap-3 animate-bounce">
+                    <span>✅</span>
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <div class="mb-8">
                 <a href="{{ route('clubs.index') }}"
                    class="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition group">
@@ -95,27 +103,42 @@
                                             Manage Club
                                         </a>
                                     @else
-                                        {{-- UPDATED: Application Form for Executives with Advisor Selection --}}
-                                        <div class="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 w-full max-w-sm">
-                                            <h4 class="text-indigo-900 font-black mb-3 flex items-center gap-2">
-                                                <span>🛡️</span> Request Management
-                                            </h4>
-                                            <form action="{{ route('clubs.apply', $club->id) }}" method="POST" class="space-y-4">
-                                                @csrf
-                                                <div>
-                                                    <label class="block text-[10px] uppercase tracking-widest font-black text-indigo-400 mb-1">Select Advisor</label>
-                                                    <select name="advisor_id" required class="w-full bg-white border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm">
-                                                        <option value="" disabled selected>Select an Advisor</option>
-                                                        @foreach(\App\Models\User::where('role', 'advisor')->get() as $advisor)
-                                                            <option value="{{ $advisor->id }}">{{ $advisor->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                                                    Submit Application
-                                                </button>
-                                            </form>
-                                        </div>
+                                        {{-- LOGIC: Check for Pending Request --}}
+                                        @php
+                                            $pendingRequest = \App\Models\ClubApplication::where('user_id', auth()->id())
+                                                ->where('club_id', $club->id)
+                                                ->where('status', 'pending')
+                                                ->exists();
+                                        @endphp
+
+                                        @if($pendingRequest)
+                                            <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 text-center w-full max-w-sm shadow-sm">
+                                                <p class="text-indigo-900 font-black text-lg">⏳ Under Review</p>
+                                                <p class="text-indigo-600 text-xs font-bold mt-1">Application is currently under review.</p>
+                                            </div>
+                                        @else
+                                            {{-- Request Management Form --}}
+                                            <div class="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 w-full max-w-sm">
+                                                <h4 class="text-indigo-900 font-black mb-3 flex items-center gap-2">
+                                                    <span>🛡️</span> Request Management
+                                                </h4>
+                                                <form action="{{ route('clubs.apply', $club->id) }}" method="POST" class="space-y-4">
+                                                    @csrf
+                                                    <div>
+                                                        <label class="block text-[10px] uppercase tracking-widest font-black text-indigo-400 mb-1">Select Advisor</label>
+                                                        <select name="advisor_id" required class="w-full bg-white border-none rounded-xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 shadow-sm">
+                                                            <option value="" disabled selected>Select an Advisor</option>
+                                                            @foreach(\App\Models\User::where('role', 'advisor')->get() as $advisor)
+                                                                <option value="{{ $advisor->id }}">{{ $advisor->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                                                        Submit Application
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
                                     @endif
                                 @endif
                             @endauth

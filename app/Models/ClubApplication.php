@@ -12,18 +12,18 @@ class ClubApplication extends Model
 
     /**
      * The attributes that are mass assignable.
+     * Ensure 'advisor_id' is here so the Controller can save it!
      */
     protected $fillable = [
-        'user_id',    // The Executive applying
-        'advisor_id', // The Advisor reviewing
-        'club_id',    // The Club in question
-        'status',     // pending, approved, rejected
-        'remarks',    // Added this in case you want to store rejection reasons
+        'user_id',    // The ID of the Executive applicant
+        'advisor_id', // The ID of the specific Advisor selected
+        'club_id',    // The ID of the Club being requested
+        'status',     // 'pending', 'approved', or 'rejected'
+        'remarks',    // Optional field for feedback/rejection reasons
     ];
 
     /**
-     * The Executive who submitted the application.
-     * Maps to the 'user_id' foreign key.
+     * Relationship: The Executive who submitted the application.
      */
     public function executive(): BelongsTo
     {
@@ -31,8 +31,8 @@ class ClubApplication extends Model
     }
 
     /**
-     * The Advisor assigned to review this application.
-     * Maps to the 'advisor_id' foreign key.
+     * Relationship: The Advisor assigned to review this application.
+     * This is the link that makes the request show up on the Advisor's dashboard.
      */
     public function advisor(): BelongsTo
     {
@@ -40,7 +40,7 @@ class ClubApplication extends Model
     }
 
     /**
-     * The Club being applied for.
+     * Relationship: The Club being applied for.
      */
     public function club(): BelongsTo
     {
@@ -48,7 +48,8 @@ class ClubApplication extends Model
     }
 
     /**
-     * Helper to check if the application is still pending.
+     * Helper: Clean boolean check for pending status.
+     * Usage in Blade: @if($application->isPending())
      */
     public function isPending(): bool
     {

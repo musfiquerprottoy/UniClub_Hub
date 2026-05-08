@@ -10,23 +10,38 @@ use App\Notifications\NewEventProposal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
     /**
-     * EXECUTIVE: Show event creation form
+     * List events for the public/users
      */
+    public function index()
+    {
+        $user = Auth::user();
+
+        // 1. If Executive: Show their own proposals (so they can track status)
+        // 2. Everyone else (Students/Guests): Show ONLY Approved events
+        $events = Event::with(['club', 'venue'])
+            ->latest()
+            ->when($user && $user->role === 'executive', function ($query) use ($user) {
+                $query->where('created_by', $user->id); 
+            })
+            ->when(!$user || $user->role !== 'executive', function ($query) {
+                $query->where('status', 'approved');
+            })
+            ->paginate(12);
+
+        return view('events.index', compact('events'));
+    }
+
     public function create()
     {
-        // Executives should only see clubs they are assigned to manage
         $clubs = Club::where('user_id', Auth::id())->orderBy('name')->get();
-
         return view('events.create', compact('clubs'));
     }
 
-    /**
-     * EXECUTIVE: Store new event proposal
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -42,54 +57,43 @@ class EventController extends Controller
             $validated['image'] = $request->file('image')->store('event-images', 'public');
         }
 
-        // Initialize status and ownership
         $validated['status'] = 'pending_advisor';
-        $validated['created_by'] = Auth::id();
+        $validated['created_by'] = Auth::id(); 
 
         $event = Event::create($validated);
 
-        // Notify Advisors
-        $advisors = User::where('role', 'advisor')->get();
-        foreach ($advisors as $advisor) {
-            // Ensure you have created this Notification class
-            $advisor->notify(new NewEventProposal($event));
+        try {
+            $advisors = User::where('role', 'advisor')->get();
+            foreach ($advisors as $advisor) {
+                if (class_exists(NewEventProposal::class)) {
+                    $advisor->notify(new NewEventProposal($event));
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Notification failed: " . $e->getMessage());
         }
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Event Proposal submitted successfully! It is now awaiting Advisor review.');
+        return redirect()->route('dashboard')->with('success', 'Event Proposal submitted! Awaiting Advisor review.');
     }
 
-    /**
-     * ADVISOR: Review & forward to Admin
-     */
     public function forward(Request $request, Event $event)
     {
         $event->update(['status' => 'pending_admin']);
-
-        // Notify Admins
-        $admins = User::where('role', 'admin')->get();
-        foreach ($admins as $admin) {
-            $admin->notify(new NewEventProposal($event));
-        }
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Event Proposal forwarded to Admin successfully.');
+        return redirect()->route('dashboard')->with('success', 'Event Proposal forwarded to Admin.');
     }
 
-    /**
-     * ADMIN: Simple Approval (if no venue/time scheduling is needed immediately)
-     */
+    public function reject(Request $request, Event $event)
+    {
+        $event->update(['status' => 'rejected']);
+        return redirect()->route('dashboard')->with('success', 'Event proposal has been rejected.');
+    }
+
     public function approve(Request $request, Event $event)
     {
         $event->update(['status' => 'approved']);
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Event has been approved and is now Live!');
+        return redirect()->route('dashboard')->with('success', 'Event approved! It is now visible to the public.');
     }
 
-    /**
-     * ADMIN: Finalize with Venue & Time (Includes Conflict Detection)
-     */
     public function finalize(Request $request, Event $event)
     {
         $request->validate([
@@ -98,9 +102,8 @@ class EventController extends Controller
             'end_time'   => 'required|date|after:start_time',
         ]);
 
-        // Conflict Detection: Check if any OTHER approved event uses this venue at this time
         $conflict = Event::where('venue_id', $request->venue_id)
-            ->where('id', '!=', $event->id) // Don't check against itself
+            ->where('id', '!=', $event->id)
             ->where('status', 'approved') 
             ->where(function ($query) use ($request) {
                 $query->whereBetween('start_time', [$request->start_time, $request->end_time])
@@ -109,10 +112,7 @@ class EventController extends Controller
             ->first();
 
         if ($conflict) {
-            return redirect()->back()->with(
-                'error',
-                '⚠️ Venue Conflict! This room is already booked for "' . $conflict->title . '".'
-            );
+            return redirect()->back()->with('error', '⚠️ Venue Conflict! This room is already booked.');
         }
 
         $event->update([
@@ -122,50 +122,26 @@ class EventController extends Controller
             'status'     => 'approved', 
         ]);
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Event officially scheduled and venue secured!');
+        return redirect()->route('dashboard')->with('success', 'Event officially scheduled!');
     }
 
-    /**
-     * List events for the public/users
-     */
-    public function index()
-    {
-        $user = Auth::user();
-
-        $events = Event::with(['club', 'venue'])
-            ->latest()
-            ->when($user->role === 'executive', function ($query) use ($user) {
-                $query->where('created_by', $user->id);
-            })
-            ->when($user->role === 'student', function ($query) {
-                // Students only see final, approved events
-                $query->where('status', 'approved');
-            })
-            ->paginate(12);
-
-        return view('events.index', compact('events'));
-    }
-
-    /**
-     * Edit event proposal (Usually for Executives before approval)
-     */
     public function edit(Event $event)
     {
-        // Only owner can edit
         if ($event->created_by !== Auth::id() && Auth::user()->role !== 'admin') {
             abort(403);
         }
 
-        $clubs = Club::where('user_id', Auth::id())->orderBy('name')->get();
+        $clubs = (Auth::user()->role === 'admin') 
+            ? Club::orderBy('name')->get() 
+            : Club::where('user_id', Auth::id())->orderBy('name')->get();
+
         return view('events.edit', compact('event', 'clubs'));
     }
 
-    /**
-     * Update event proposal
-     */
     public function update(Request $request, Event $event)
     {
+        Log::info('Updating event ID ' . $event->id, $request->all());
+
         $validated = $request->validate([
             'club_id'     => 'required|exists:clubs,id',
             'title'       => 'required|string|max:255',
@@ -176,30 +152,19 @@ class EventController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            if ($event->image) {
-                Storage::disk('public')->delete($event->image);
-            }
+            if ($event->image) Storage::disk('public')->delete($event->image);
             $validated['image'] = $request->file('image')->store('event-images', 'public');
         }
 
         $event->update($validated);
 
-        return redirect()->route('events.index')
-            ->with('success', 'Event updated successfully!');
+        return redirect()->route('dashboard')->with('success', 'Event updated successfully!');
     }
 
-    /**
-     * Delete event proposal
-     */
     public function destroy(Event $event)
     {
-        if ($event->image) {
-            Storage::disk('public')->delete($event->image);
-        }
-
+        if ($event->image) Storage::disk('public')->delete($event->image);
         $event->delete();
-
-        return redirect()->back()
-            ->with('success', 'Event deleted successfully!');
+        return redirect()->back()->with('success', 'Event deleted successfully!');
     }
 }
