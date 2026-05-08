@@ -1,0 +1,9 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#7469
+    [34mname[39m: [32m"[39m[32mClub Advisor[39m[32m"[39m,
+    [34memail[39m: [32m"[39m[32madvisor@example.com[39m[32m"[39m,
+    #[33mpassword[39m: [32m"[39m\$[32m2y[39m\$[32m12[39m\$[32mDN81cArlkCLTnG5StOBygOwF6IjLEWR5McFJ9f8tM4PjoSmmseU9C[39m[32m"[39m,
+    [34mrole[39m: [32m"[39m[32madvisor[39m[32m"[39m,
+    [34mupdated_at[39m: [32m"[39m[32m2026-05-08 07:30:09[39m[32m"[39m,
+    [34mcreated_at[39m: [32m"[39m[32m2026-05-08 07:30:09[39m[32m"[39m,
+    [34mid[39m: [35m2[39m,
+  }

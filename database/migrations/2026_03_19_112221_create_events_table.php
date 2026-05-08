@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
-            // This links the event to a specific club
+            // Links to the club that owns the event
             $table->foreignId('club_id')->constrained()->onDelete('cascade'); 
             
             $table->string('title');
@@ -21,8 +21,20 @@ return new class extends Migration
             $table->date('event_date');
             $table->string('location');
             
-            // Every proposal starts as 'pending' until an Admin/Advisor approves it
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            /**
+             * Workflow Statuses:
+             * pending_advisor: Executive created it. Waiting for Advisor.
+             * pending_admin:   Advisor approved it. Waiting for Admin.
+             * approved:        Admin approved it. Now visible to students.
+             * rejected:        Denied by either Advisor or Admin.
+             */
+            $table->enum('status', [
+                'pending_advisor', 
+                'pending_admin', 
+                'approved', 
+                'rejected'
+            ])->default('pending_advisor');
+
             $table->timestamps();
         });
     }

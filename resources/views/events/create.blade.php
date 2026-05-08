@@ -7,42 +7,74 @@
                 <p class="text-gray-500 font-medium">Fill in the details below to send your proposal for review.</p>
             </div>
 
+            {{-- CRITICAL: Error Debugging Block --}}
+            @if ($errors->any())
+                <div class="mb-6 bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-[2rem] shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <span class="text-xl mr-2">⚠️</span>
+                        <p class="font-black">Please fix the following errors:</p>
+                    </div>
+                    <ul class="list-disc list-inside text-sm font-bold opacity-80">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-2xl shadow-indigo-100 sm:rounded-[2.5rem] border border-gray-100">
                 <form method="POST" action="{{ route('events.store') }}" enctype="multipart/form-data" class="p-8 md:p-12 space-y-8">
                     @csrf
 
+                    {{-- Title --}}
                     <div>
                         <x-input-label for="title" :value="__('Event Title')" class="text-gray-700 font-bold ml-1 mb-2" />
-                        <x-text-input id="title" name="title" type="text" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl py-4" placeholder="e.g. Annual Tech Symposium" required />
+                        <x-text-input id="title" name="title" type="text" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl py-4" :value="old('title')" placeholder="e.g. Annual Tech Symposium" required />
                         <x-input-error :messages="$errors->get('title')" class="mt-2" />
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- Club Selection --}}
                         <div>
                             <x-input-label for="club_id" :value="__('Select Club')" class="text-gray-700 font-bold ml-1 mb-2" />
                             <select id="club_id" name="club_id" class="block w-full border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-2xl py-4 shadow-sm">
                                 @foreach(\App\Models\Club::where('user_id', Auth::id())->get() as $club)
-                                    <option value="{{ $club->id }}">{{ $club->name }}</option>
+                                    <option value="{{ $club->id }}" {{ old('club_id') == $club->id ? 'selected' : '' }}>
+                                        {{ $club->name }}
+                                    </option>
                                 @endforeach
                             </select>
+                            <x-input-error :messages="$errors->get('club_id')" class="mt-2" />
                         </div>
+
+                        {{-- Date --}}
                         <div>
                             <x-input-label for="event_date" :value="__('Proposed Date')" class="text-gray-700 font-bold ml-1 mb-2" />
-                            <x-text-input id="event_date" name="event_date" type="date" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl py-4" required />
+                            <x-text-input id="event_date" name="event_date" type="date" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl py-4" :value="old('event_date')" required />
+                            <x-input-error :messages="$errors->get('event_date')" class="mt-2" />
                         </div>
                     </div>
 
+                    {{-- NEW: Location Field (This was likely causing your silent failure) --}}
+                    <div>
+                        <x-input-label for="location" :value="__('Proposed Location')" class="text-gray-700 font-bold ml-1 mb-2" />
+                        <x-text-input id="location" name="location" type="text" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl py-4" :value="old('location')" placeholder="e.g. Main Auditorium or Zoom Link" required />
+                        <x-input-error :messages="$errors->get('location')" class="mt-2" />
+                    </div>
+
+                    {{-- Description --}}
                     <div>
                         <x-input-label for="description" :value="__('Event Description')" class="text-gray-700 font-bold ml-1 mb-2" />
-                        <textarea id="description" name="description" rows="4" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl shadow-sm placeholder-gray-400" placeholder="Tell us what this event is about..." required></textarea>
+                        <textarea id="description" name="description" rows="4" class="block w-full border-gray-200 focus:ring-indigo-500 rounded-2xl shadow-sm placeholder-gray-400" placeholder="Tell us what this event is about..." required>{{ old('description') }}</textarea>
                         <x-input-error :messages="$errors->get('description')" class="mt-2" />
                     </div>
 
+                    {{-- Image Upload --}}
                     <div>
                         <x-input-label :value="__('Event Banner (Optional)')" class="text-gray-700 font-bold ml-1 mb-2" />
                         <div class="mt-2 flex justify-center rounded-3xl border-2 border-dashed border-gray-300 px-6 pt-5 pb-6 transition-all hover:border-indigo-400 hover:bg-indigo-50/30 group relative">
                             <div class="space-y-1 text-center">
-                                <img id="image-preview" class="hidden mx-auto h-32 w-auto rounded-xl mb-4 shadow-md" />
+                                <img id="image-preview" class="hidden mx-auto h-32 w-auto rounded-xl mb-4 shadow-md object-cover" />
                                 
                                 <div id="upload-icon" class="flex flex-col items-center">
                                     <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-indigo-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -55,14 +87,15 @@
                                         </label>
                                         <p class="pl-1">or drag and drop</p>
                                     </div>
-                                    <p class="text-xs text-gray-400 uppercase tracking-widest mt-1">PNG, JPG, SVG up to 2MB</p>
+                                    <p class="text-xs text-gray-400 uppercase tracking-widest mt-1">PNG, JPG up to 2MB</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {{-- Submit --}}
                     <div class="pt-4">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-8 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-2xl font-black text-lg text-white shadow-xl hover:shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-8 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-2xl font-black text-lg text-white shadow-xl hover:shadow-indigo-200 hover:scale-[1.01] active:scale-95 transition-all">
                             Submit Proposal
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -82,8 +115,7 @@
                 const icon = document.getElementById('upload-icon');
                 preview.src = reader.result;
                 preview.classList.remove('hidden');
-                // Hide the upload icon to focus on the image
-                icon.querySelector('svg').classList.add('hidden');
+                icon.classList.add('opacity-40'); // Dim the icon instead of hiding to keep layout
             }
             reader.readAsDataURL(event.target.files[0]);
         }

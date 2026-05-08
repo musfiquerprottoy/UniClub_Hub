@@ -11,12 +11,27 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Registering Middleware Aliases
         $middleware->alias([
-            'admin' => \App\Http\Middleware\CheckAdmin::class,
+            /*
+            |--------------------------------------------------------------------------
+            | Role-Based Middleware
+            |--------------------------------------------------------------------------
+            | These aliases allow you to protect routes using:
+            | ->middleware('advisor') or ->middleware('role:advisor')
+            */
+            
+            // Your specific class-based middlewares
+            'admin'     => \App\Http\Middleware\CheckAdmin::class,
             'executive' => \App\Http\Middleware\CheckExecutive::class,
-            'advisor' => \App\Http\Middleware\CheckAdvisor::class, 
+            'advisor'   => \App\Http\Middleware\CheckAdvisor::class, 
+            'student'   => \App\Http\Middleware\CheckStudent::class,
+
+            // The 'role' alias is required if your routes use the syntax: role:advisor
+            // Ensure you have created the RoleMiddleware.php file!
+            'role'      => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
