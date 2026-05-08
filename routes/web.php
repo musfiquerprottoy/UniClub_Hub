@@ -44,6 +44,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:executive')->group(function () {
         Route::post('/clubs/{club}/apply', [ClubController::class, 'apply'])->name('clubs.apply');
         Route::get('/clubs/{club}/manage-members', [ClubController::class, 'manageMembers'])->name('clubs.manage-members');
+        
+        // --- NEW: View detailed membership form ---
+        Route::get('/members/{clubMember}/show-request', [ClubMemberController::class, 'showRequest'])->name('members.show-request');
+        
         Route::patch('/members/{clubMember}/status', [ClubMemberController::class, 'updateMemberStatus'])->name('members.update-status');
 
         Route::get('/clubs/{club}/edit', [ClubController::class, 'edit'])->name('clubs.edit');
